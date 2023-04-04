@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/cnnrznn/goftp/client"
+	"github.com/cnnrznn/goftp/server"
 )
 
 type Main struct {
@@ -14,24 +17,35 @@ type Main struct {
 
 func main() {
 	main := &Main{}
+	stop := make(chan error)
 
 	if err := parseArgs(main); err != nil {
-		log.Fatalf("Bad args: %v", err)
+		fmt.Printf("Bad args: %v\n", err)
+		return
 	}
 
 	if main.isServer {
 		// start server
+		go server.New(main.filename).Run(stop)
 	}
 
 	if main.isClient {
 		// start client
+		go client.New(main.filename, main.toURI).Run(stop)
+	}
+
+	for err := range stop {
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 
 	os.Exit(0)
 }
 
+// Replace this piece of trash with something better.
 func parseArgs(main *Main) error {
-	args := os.Args
+	args := os.Args[1:]
 
 	for i, arg := range args {
 		switch arg {
@@ -42,6 +56,7 @@ func parseArgs(main *Main) error {
 		default:
 			main.toURI = args[i]
 			main.filename = args[i+1]
+			break
 		}
 	}
 
