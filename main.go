@@ -39,9 +39,6 @@ func parseArgs(main *Main) error {
 			main.isServer = true
 		case "-c":
 			main.isClient = true
-		case "-b":
-			main.isClient = true
-			main.isServer = true
 		default:
 			main.toURI = args[i]
 			main.filename = args[i+1]
