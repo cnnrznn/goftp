@@ -1,8 +1,10 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"os"
 
 	"github.com/cnnrznn/goftp/model"
 )
@@ -77,6 +79,29 @@ func (s *Server) receiveMetadata(conn net.Conn) (*model.Meta, error) {
 }
 
 func (s *Server) receiveFile(conn net.Conn, meta *model.Meta) error {
-	// TODO: implement lol
+	buf := make([]byte, 4000000)
+	nread := 0
+
+	file, err := os.Open(meta.Name)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	defer writer.Flush()
+
+	for nread < meta.Size {
+		n, err := conn.Read(buf)
+		if err != nil {
+			return err
+		}
+
+		_, err = writer.Write(buf[:n])
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
