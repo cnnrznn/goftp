@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"fmt"
 	"net"
 	"os"
@@ -81,6 +82,7 @@ func (s *Server) receiveMetadata(conn net.Conn) (*model.Meta, error) {
 func (s *Server) receiveFile(conn net.Conn, meta *model.Meta) error {
 	buf := make([]byte, 4000000)
 	nread := 0
+	hasher := sha256.New()
 
 	file, err := os.Open(meta.Name)
 	if err != nil {
@@ -97,10 +99,27 @@ func (s *Server) receiveFile(conn net.Conn, meta *model.Meta) error {
 			return err
 		}
 
-		_, err = writer.Write(buf[:n])
+		nread += n
+
+		nwritten, err := writer.Write(buf[:n])
 		if err != nil {
 			return err
 		}
+		if n != nwritten {
+			return fmt.Errorf("did not write all bytes to file")
+		}
+
+		nwritten, err = hasher.Write(buf[:n])
+		if err != nil {
+			return err
+		}
+		if n != nwritten {
+			return fmt.Errorf("did not write all bytes to sha256")
+		}
+	}
+
+	if meta.Checksum != string(hasher.Sum(nil)) {
+		return fmt.Errorf("File checksum does not match metadata!")
 	}
 
 	return nil
