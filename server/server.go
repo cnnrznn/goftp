@@ -12,15 +12,15 @@ import (
 
 type Server struct {
 	filename string
-	port     int
+	addr     string
 }
 
 func New(
-	port int,
+	addr string,
 	fn string,
 ) *Server {
 	return &Server{
-		port:     port,
+		addr:     addr,
 		filename: fn,
 	}
 }
@@ -33,11 +33,15 @@ func (s *Server) Run(stopChan chan error) {
 	}
 	defer conn.Close()
 
+	fmt.Println("receiving metadata")
+
 	meta, err := s.receiveMetadata(conn)
 	if err != nil {
 		stopChan <- err
 		return
 	}
+
+	fmt.Println("receving file")
 
 	if err := s.receiveFile(conn, meta); err != nil {
 		stopChan <- err
@@ -46,9 +50,11 @@ func (s *Server) Run(stopChan chan error) {
 }
 
 func (s *Server) acceptConn() (net.Conn, error) {
-	ls, err := net.Listen(fmt.Sprintf(":%v", s.port), "tcp")
+	fmt.Printf("Listening on %v\n", s.addr)
+
+	ls, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		return nil, fmt.Errorf("can't listen on port %v: %v", s.port, err)
+		return nil, fmt.Errorf("can't listen on %v: %v", s.addr, err)
 	}
 	defer ls.Close()
 
@@ -57,6 +63,7 @@ func (s *Server) acceptConn() (net.Conn, error) {
 		return nil, fmt.Errorf("error accepting request: %v", err)
 	}
 
+	fmt.Println("Accepted connection")
 	return conn, nil
 }
 
@@ -75,6 +82,8 @@ func (s *Server) receiveMetadata(conn net.Conn) (*model.Meta, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("received metadata")
 
 	return meta, nil
 }

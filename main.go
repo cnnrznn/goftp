@@ -16,7 +16,7 @@ type Main struct {
 }
 
 func main() {
-	port := 9751
+	addr := "localhost:9751"
 	main := &Main{}
 	stop := make(chan error)
 
@@ -27,7 +27,7 @@ func main() {
 
 	if main.isServer {
 		// start server
-		go server.New(port, main.filename).Run(stop)
+		go server.New(addr, main.filename).Run(stop)
 	}
 
 	if main.isClient {

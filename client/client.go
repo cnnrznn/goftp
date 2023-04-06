@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"fmt"
+	"net"
 	"os"
 
 	"github.com/cnnrznn/goftp/model"
@@ -25,13 +26,30 @@ func New(
 }
 
 func (c *Client) Run(stopChan chan error) {
+	fmt.Println("Client calculating metadata")
+
 	meta, err := c.createMetadata()
 	if err != nil {
 		stopChan <- err
 		return
 	}
 
-	if err := c.sendFile(meta); err != nil {
+	conn, err := net.Dial("tcp", c.toURI)
+	if err != nil {
+		stopChan <- err
+		return
+	}
+	defer conn.Close()
+
+	fmt.Println("Client sending metadata...")
+
+	if err := c.sendMetadata(meta, conn); err != nil {
+
+	}
+
+	fmt.Println("Client sending file...")
+
+	if err := c.sendFile(meta, conn); err != nil {
 		stopChan <- err
 		return
 	}
