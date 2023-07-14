@@ -5,13 +5,13 @@ import (
 )
 
 func TestSerialize(t *testing.T) {
-	model := &Meta{
+	meta := &Meta{
 		Name:     "myfile.txt",
 		Size:     4000000,
-		Checksum: "bullshit",
+		Checksum: []byte("bullshit"),
 	}
 
-	bs, err := model.Serialize(METADATA_SIZE)
+	bs, err := Serialize(meta)
 	if err != nil {
 		t.Error(err)
 	}
@@ -20,12 +20,12 @@ func TestSerialize(t *testing.T) {
 		t.Errorf("serialized payload is the wrong size: got %v, want %v", len(bs), METADATA_SIZE)
 	}
 
-	meta, err := Deserialize(bs)
+	metaResult, err := Deserialize(bs)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if !model.Equals(meta) {
-		t.Errorf("objects do not match: %v\n%v\n", model, meta)
+	if !meta.Equals(metaResult) {
+		t.Errorf("objects do not match: %v\n%v\n", meta, metaResult)
 	}
 }

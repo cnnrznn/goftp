@@ -12,7 +12,7 @@ import (
 func TestE2E(t *testing.T) {
 	srcFile := "srcFile.txt"
 	dstFile := "dstFile.txt"
-	content := []byte("content === content")
+	content := []byte("content === content\n")
 
 	err := os.WriteFile(srcFile, content, 0644)
 	if err != nil {
@@ -27,8 +27,11 @@ func TestE2E(t *testing.T) {
 	go server.Run(stopChan)
 	go client.Run(stopChan)
 
-	for err := range stopChan {
-		t.Log(err)
+	for i := 0; i < 2; i++ {
+		err := <-stopChan
+		if err != nil {
+			t.Log(err)
+		}
 	}
 
 	outbs, err := os.ReadFile(dstFile)

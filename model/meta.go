@@ -2,20 +2,39 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type Meta struct {
 	Size     int    `json:"size"`
 	Name     string `json:"name"`
-	Checksum string `json:"checksum"`
+	Checksum []byte `json:"checksum"`
 }
 
 const (
 	METADATA_SIZE = 1024
 )
 
+func (m *Meta) ChecksumEquals(other []byte) bool {
+	if len(m.Checksum) != len(other) {
+		return false
+	}
+
+	for i := 0; i < len(m.Checksum); i++ {
+		if m.Checksum[i] != other[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (m *Meta) String() string {
+	return fmt.Sprintf("%d, %s", m.Size, m.Name)
+}
+
 func (m *Meta) Equals(other *Meta) bool {
-	if m.Checksum != other.Checksum ||
+	if !m.ChecksumEquals(other.Checksum) ||
 		m.Name != other.Name ||
 		m.Size != other.Size {
 		return false
@@ -24,13 +43,13 @@ func (m *Meta) Equals(other *Meta) bool {
 	return true
 }
 
-func (m *Meta) Serialize(width int) ([]byte, error) {
+func Serialize(m *Meta) ([]byte, error) {
 	bs, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]byte, width)
+	result := make([]byte, METADATA_SIZE)
 	for i := range result {
 		result[i] = ' '
 	}

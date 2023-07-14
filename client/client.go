@@ -26,8 +26,6 @@ func New(
 }
 
 func (c *Client) Run(stopChan chan error) {
-	fmt.Println("Client calculating metadata")
-
 	meta, err := c.createMetadata()
 	if err != nil {
 		stopChan <- err
@@ -41,18 +39,17 @@ func (c *Client) Run(stopChan chan error) {
 	}
 	defer conn.Close()
 
-	fmt.Println("Client sending metadata...")
-
 	if err := c.sendMetadata(meta, conn); err != nil {
-
+		stopChan <- err
+		return
 	}
-
-	fmt.Println("Client sending file...")
 
 	if err := c.sendFile(meta, conn); err != nil {
 		stopChan <- err
 		return
 	}
+
+	stopChan <- nil
 }
 
 func (c *Client) createMetadata() (*model.Meta, error) {
@@ -79,11 +76,7 @@ func (c *Client) createMetadata() (*model.Meta, error) {
 	return meta, nil
 }
 
-func (c *Client) sendFile(meta *model.Meta) error {
-	return nil
-}
-
-func calculateChecksum(file *os.File, size int) (string, error) {
+func calculateChecksum(file *os.File, size int) ([]byte, error) {
 	hasher := sha256.New()
 	buf := make([]byte, 8192)
 	reader := bufio.NewReader(file)
@@ -92,18 +85,65 @@ func calculateChecksum(file *os.File, size int) (string, error) {
 	for nread < size {
 		n, err := reader.Read(buf)
 		if err != nil {
-			return "", err
+			return []byte{}, err
 		}
 
 		nread += n
 		nwritten, err := hasher.Write(buf[:n])
 		if err != nil {
-			return "", err
+			return []byte{}, err
 		}
 		if n != nwritten {
-			return "", fmt.Errorf("failed to write all bytes to hasher")
+			return []byte{}, fmt.Errorf("failed to write all bytes to hasher")
 		}
 	}
 
-	return string(hasher.Sum(nil)), nil
+	return hasher.Sum(nil), nil
+}
+
+func (c *Client) sendMetadata(meta *model.Meta, conn net.Conn) error {
+	bs, err := model.Serialize(meta)
+	if err != nil {
+		return err
+	}
+
+	sent, err := conn.Write(bs)
+	if err != nil {
+		return err
+	}
+	if sent != len(bs) {
+		return fmt.Errorf("did not send correct metadata bytes")
+	}
+
+	return nil
+}
+
+func (c *Client) sendFile(meta *model.Meta, conn net.Conn) error {
+	file, err := os.Open(meta.Name)
+	if err != nil {
+		return err
+	}
+
+	reader := bufio.NewReader(file)
+
+	buf := make([]byte, 64000)
+
+	for nread := 0; nread < meta.Size; {
+		n, err := reader.Read(buf)
+		if err != nil {
+			return err
+		}
+
+		nread += n
+
+		nwritten, err := conn.Write(buf[:n])
+		if err != nil {
+			return err
+		}
+		if nwritten != n {
+			return fmt.Errorf("not all bytes written to server")
+		}
+	}
+
+	return nil
 }

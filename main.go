@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/cnnrznn/goargs"
+
 	"github.com/cnnrznn/goftp/client"
 	"github.com/cnnrznn/goftp/server"
 )
@@ -46,23 +48,18 @@ func main() {
 
 // Replace this piece of trash with something better.
 func parseArgs(main *Main) error {
-	args := os.Args[1:]
+	parser := goargs.New()
+	parser.Required("-type", goargs.One)
+	parser.Required("-to", goargs.One)
+	parser.Required("-fn", goargs.One)
 
-	for i, arg := range args {
-		switch arg {
-		case "-s":
-			main.isServer = true
-		case "-c":
-			main.isClient = true
-		default:
-			main.toURI = args[i]
-			main.filename = args[i+1]
-			break
-		}
+	vals, err := parser.Parse()
+	if err != nil {
+		return err
 	}
 
-	if !main.isClient && !main.isServer {
-		return fmt.Errorf("specify server, client, or both")
+	if vals["-type"][0] == "server" {
+		main.isServer = true
 	}
 
 	if len(main.toURI) == 0 {
