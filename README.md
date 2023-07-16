@@ -7,6 +7,20 @@ Keep this library simple so it can be a flexible tool in other projects.
 
 ## Timeline
 
+### Update 2023/07/16
+
+A couple of days ago I got this module into "working order," meaning untested
+in any dependent projects but the integration tests are working.
+In doing so, I realize that exposing the `Run()` method for the API is a big
+anti-pattern.
+The functions on client/server side are inherrently synchronous and it should
+be left to the caller to run them in the background or not.
+I will be refactoring this package to be simpler.
+
+Further, the "Client" and "Server" naming convention is obtuse.
+I will rename these to something clearer, or better combine them into a single
+package.
+
 ### Update 2023/04/06
 
 In working on this project, I realize I need a couple of generic libraries that
