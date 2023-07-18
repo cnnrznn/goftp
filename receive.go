@@ -1,4 +1,4 @@
-package server
+package ftp
 
 import (
 	"bufio"
@@ -10,49 +10,31 @@ import (
 	"github.com/cnnrznn/goftp/model"
 )
 
-type Server struct {
-	filename string
-	addr     string
-}
-
-func New(
-	addr string,
-	fn string,
-) *Server {
-	return &Server{
-		addr:     addr,
-		filename: fn,
-	}
-}
-
-func (s *Server) Run(stopChan chan error) {
-	conn, err := s.acceptConn()
+func ReceiveFile(ops Option) error {
+	conn, err := acceptConn(ops.Addr)
 	if err != nil {
-		stopChan <- err
-		return
+		return err
 	}
 	defer conn.Close()
 
-	meta, err := s.receiveMetadata(conn)
+	meta, err := receiveMetadata(conn)
 	if err != nil {
-		stopChan <- err
-		return
+		return err
 	}
 
-	meta.Name = s.filename
+	meta.Name = ops.Filename
 
-	if err := s.receiveFile(conn, meta); err != nil {
-		stopChan <- err
-		return
+	if err := receiveFile(conn, meta); err != nil {
+		return err
 	}
 
-	stopChan <- nil
+	return nil
 }
 
-func (s *Server) acceptConn() (net.Conn, error) {
-	ls, err := net.Listen("tcp", s.addr)
+func acceptConn(addr string) (net.Conn, error) {
+	ls, err := net.Listen("tcp", addr)
 	if err != nil {
-		return nil, fmt.Errorf("can't listen on %v: %v", s.addr, err)
+		return nil, fmt.Errorf("can't listen on %v: %v", addr, err)
 	}
 	defer ls.Close()
 
@@ -64,7 +46,7 @@ func (s *Server) acceptConn() (net.Conn, error) {
 	return conn, nil
 }
 
-func (s *Server) receiveMetadata(conn net.Conn) (*model.Meta, error) {
+func receiveMetadata(conn net.Conn) (*model.Meta, error) {
 	metaBs := make([]byte, model.METADATA_SIZE)
 
 	n, err := conn.Read(metaBs)
@@ -83,7 +65,7 @@ func (s *Server) receiveMetadata(conn net.Conn) (*model.Meta, error) {
 	return meta, nil
 }
 
-func (s *Server) receiveFile(conn net.Conn, meta *model.Meta) error {
+func receiveFile(conn net.Conn, meta *model.Meta) error {
 	buf := make([]byte, 4000000)
 	nread := 0
 	hasher := sha256.New()
@@ -93,7 +75,6 @@ func (s *Server) receiveFile(conn net.Conn, meta *model.Meta) error {
 		return err
 	}
 	defer file.Close()
-	defer file.Sync()
 
 	writer := bufio.NewWriter(file)
 	defer writer.Flush()
@@ -126,6 +107,7 @@ func (s *Server) receiveFile(conn net.Conn, meta *model.Meta) error {
 	if !meta.ChecksumEquals(hasher.Sum(nil)) {
 		return fmt.Errorf("File checksum does not match metadata!")
 	}
+	fmt.Println("Checksum match :)")
 
 	return nil
 }

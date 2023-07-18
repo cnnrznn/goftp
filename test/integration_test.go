@@ -2,11 +2,11 @@ package test
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
-	"github.com/cnnrznn/goftp/client"
-	"github.com/cnnrznn/goftp/server"
+	ftp "github.com/cnnrznn/goftp"
 )
 
 func TestE2E(t *testing.T) {
@@ -20,18 +20,22 @@ func TestE2E(t *testing.T) {
 	}
 	defer os.Remove(srcFile)
 
-	server := server.New("localhost:9751", dstFile)
-	client := client.New(srcFile, "localhost:9751")
-	stopChan := make(chan error)
-
-	go server.Run(stopChan)
-	go client.Run(stopChan)
-
-	for i := 0; i < 2; i++ {
-		err := <-stopChan
+	go func() {
+		err := ftp.ReceiveFile(ftp.Option{
+			Addr:     "localhost:9751",
+			Filename: dstFile,
+		})
 		if err != nil {
-			t.Log(err)
+			fmt.Println(err)
 		}
+	}()
+
+	err = ftp.SendFile(ftp.Option{
+		Addr:     "localhost:9751",
+		Filename: srcFile,
+	})
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	outbs, err := os.ReadFile(dstFile)
