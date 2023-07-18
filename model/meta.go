@@ -50,9 +50,6 @@ func Serialize(m *Meta) ([]byte, error) {
 	}
 
 	result := make([]byte, METADATA_SIZE)
-	for i := range result {
-		result[i] = ' '
-	}
 	copy(result, bs)
 
 	return result, nil
