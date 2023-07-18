@@ -40,6 +40,6 @@ I will be pausing work on this tool until both of those are complete.
 
 ### Stage 1
 
-- [ ] Server - listen on a port and perform receive protocol
-- [ ] Client - Send file to destination via protocol
-- [ ] No retries, fail hard
+- [x] Server - listen on a port and perform receive protocol
+- [x] Client - Send file to destination via protocol
+- [x] No retries, fail hard
