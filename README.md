@@ -7,6 +7,12 @@ Keep this library simple so it can be a flexible tool in other projects.
 
 ## Timeline
 
+### Update 2023/07/18
+
+- Integration tests working
+- Simplified API
+- Removed unnecessary packages. All under `ftp` now.
+
 ### Update 2023/07/16
 
 A couple of days ago I got this module into "working order," meaning untested
