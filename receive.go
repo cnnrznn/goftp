@@ -107,7 +107,6 @@ func receiveFile(conn net.Conn, meta *model.Meta) error {
 	if !meta.ChecksumEquals(hasher.Sum(nil)) {
 		return fmt.Errorf("File checksum does not match metadata!")
 	}
-	fmt.Println("Checksum match :)")
 
 	return nil
 }
