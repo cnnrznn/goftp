@@ -20,6 +20,7 @@ func TestE2E(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.Remove(srcFile)
+	defer os.Remove(dstFile)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -68,6 +69,7 @@ func TestRepeated(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.Remove(srcFile)
+	defer os.Remove(dstFile)
 
 	wg := sync.WaitGroup{}
 	wg.Add(iter)
