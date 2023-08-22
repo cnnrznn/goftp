@@ -15,14 +15,14 @@ func TestE2E(t *testing.T) {
 	dstFile := "dstFile.txt"
 	content := []byte("content === content\n")
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
 	err := os.WriteFile(srcFile, content, 0644)
 	if err != nil {
 		t.Error(err)
 	}
 	defer os.Remove(srcFile)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 
 	go func() {
 		err := ftp.ReceiveFile(ftp.Option{
@@ -38,6 +38,7 @@ func TestE2E(t *testing.T) {
 	err = ftp.SendFile(ftp.Option{
 		Addr:     "localhost:9751",
 		Filename: srcFile,
+		Retries:  3,
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -54,4 +55,47 @@ func TestE2E(t *testing.T) {
 	if !bytes.Equal([]byte(content), outbs) {
 		t.Error("files do not match")
 	}
+}
+
+func TestRepeated(t *testing.T) {
+	srcFile := "srcFile.txt"
+	dstFile := "dstFile.txt"
+	content := []byte("content === content\n")
+	iter := 10
+
+	err := os.WriteFile(srcFile, content, 0644)
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.Remove(srcFile)
+
+	wg := sync.WaitGroup{}
+	wg.Add(iter)
+
+	go func() {
+		for i := 0; i < iter; i++ {
+			fmt.Printf("%v\r", i)
+			err := ftp.ReceiveFile(ftp.Option{
+				Addr:     "localhost:9752",
+				Filename: dstFile,
+			})
+			if err != nil {
+				fmt.Println(err)
+			}
+			wg.Done()
+		}
+	}()
+
+	for i := 0; i < iter; i++ {
+		err = ftp.SendFile(ftp.Option{
+			Addr:     "localhost:9752",
+			Filename: srcFile,
+			Retries:  3,
+		})
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	wg.Wait()
 }

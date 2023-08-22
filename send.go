@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/cnnrznn/goftp/model"
 )
@@ -12,17 +13,29 @@ import (
 func SendFile(ops Option) error {
 	fn := ops.Filename
 	destination := ops.Addr
+	backoff := 100 * time.Millisecond
+
+	var conn net.Conn
 
 	meta, err := model.GetMetadata(fn)
 	if err != nil {
 		return err
 	}
 
-	conn, err := net.Dial("tcp", destination)
+	for i := 0; i < ops.Retries; i++ {
+		conn, err = net.Dial("tcp", destination)
+		if err != nil {
+			time.Sleep(backoff)
+			backoff *= 2
+		} else {
+			err = nil
+			defer conn.Close()
+			break
+		}
+	}
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
 
 	if err := sendMetadata(meta, conn); err != nil {
 		return err
