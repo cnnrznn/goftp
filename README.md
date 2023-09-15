@@ -5,6 +5,11 @@ Simply specify a target machine and a filename, and watch it go.
 
 Keep this library simple so it can be a flexible tool in other projects.
 
+This library is push based.
+The reason for this is that the destination machine does not have the metadata necessary to request the file.
+It is up to the program using this library to determine when file transfer is necessary and expected, and invoke the receiving machine to listen for an incoming file when necessary.
+
+
 ## Timeline
 
 ### Update 2023/07/18
