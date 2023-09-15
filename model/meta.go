@@ -46,20 +46,20 @@ func calculateChecksum(file *os.File, size int) ([]byte, error) {
 	hasher := sha256.New()
 	buf := make([]byte, 8192)
 	reader := bufio.NewReader(file)
-	nread := 0
+	ndone := 0
 
-	for nread < size {
-		n, err := reader.Read(buf)
+	for ndone < size {
+		nread, err := reader.Read(buf)
 		if err != nil {
 			return []byte{}, err
 		}
 
-		nread += n
-		nwritten, err := hasher.Write(buf[:n])
+		ndone += nread
+		nwritten, err := hasher.Write(buf[:nread])
 		if err != nil {
 			return []byte{}, err
 		}
-		if n != nwritten {
+		if nread != nwritten {
 			return []byte{}, fmt.Errorf("failed to write all bytes to hasher")
 		}
 	}
