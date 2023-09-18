@@ -33,7 +33,7 @@ func GetMetadata(fn string) (*Meta, error) {
 	}
 
 	meta.Size = int(stat.Size())
-	meta.Name = stat.Name()
+	meta.Name = fn
 	meta.Checksum, err = calculateChecksum(file, int(stat.Size()))
 	if err != nil {
 		return nil, err
